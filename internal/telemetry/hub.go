@@ -87,6 +87,17 @@ func (h *Hub) LatestPositions() map[string]TelemetryMessage {
 	return out
 }
 
+// ApplySyntheticEOContacts sets msg.SyntheticEOContacts from priorPositions plus msg
+// as the own-ship state (same merge the hub uses before broadcast).
+func ApplySyntheticEOContacts(msg *TelemetryMessage, priorPositions map[string]TelemetryMessage) {
+	world := make(map[string]TelemetryMessage, len(priorPositions)+1)
+	for k, v := range priorPositions {
+		world[k] = v
+	}
+	world[msg.DroneID] = *msg
+	msg.SyntheticEOContacts = BuildSyntheticEOContacts(*msg, world, DefaultSyntheticEOParams())
+}
+
 func (h *Hub) Run(ctx context.Context) {
 	slog.Info("hub_start")
 	defer slog.Info("hub_stop")
@@ -99,13 +110,12 @@ func (h *Hub) Run(ctx context.Context) {
 			msg.ReceivedAt = time.Now()
 
 			h.posMu.RLock()
-			world := make(map[string]TelemetryMessage, len(h.positions)+1)
+			prior := make(map[string]TelemetryMessage, len(h.positions))
 			for k, v := range h.positions {
-				world[k] = v
+				prior[k] = v
 			}
 			h.posMu.RUnlock()
-			world[msg.DroneID] = msg
-			msg.SyntheticEOContacts = BuildSyntheticEOContacts(msg, world, DefaultSyntheticEOParams())
+			ApplySyntheticEOContacts(&msg, prior)
 
 			data, err := json.Marshal(msg)
 			if err != nil {

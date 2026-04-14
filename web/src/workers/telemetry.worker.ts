@@ -10,13 +10,8 @@
  */
 
 import type { TelemetryMessage } from '../types/telemetry'
-import {
-  DRONE_IDS,
-  SAB_DRONE_STRIDE,
-  SAB_EO_BASE_BYTE,
-  SAB_EO_SLOT_BYTES,
-  SAB_EO_SLOT_COUNT,
-} from '../constants/tactical'
+import { DRONE_IDS, SAB_DRONE_STRIDE } from '../constants/tactical'
+import { writeSyntheticEOToSAB } from '../utils/writeSyntheticEOToSAB'
 
 const GPS_FIX_CODES: Record<string, number> = {
   NO_FIX: 0, '2D_FIX': 1, '3D_FIX': 2, RTK_FLOAT: 3, RTK_FIXED: 4,
@@ -196,35 +191,7 @@ function writeSAB(droneIdx: number, msg: TelemetryMessage) {
   Atomics.store(int32View, i32Base + 26, msg.armed ? 1 : 0)
   Atomics.store(int32View, i32Base + 27, FLIGHT_MODE_CODES[msg.flightMode] ?? 0)
 
-  writeSyntheticEOToSAB(droneIdx, msg)
-}
-
-function writeSyntheticEOToSAB(droneIdx: number, msg: TelemetryMessage) {
-  if (!float64View) return
-  const byteOffset = droneIdx * SAB_DRONE_STRIDE
-  const others = DRONE_IDS.filter((_, i) => i !== droneIdx)
-  const byTarget = new Map(
-    (msg.syntheticEOContacts ?? []).map((c) => [c.targetDroneId, c]),
-  )
-  for (let s = 0; s < SAB_EO_SLOT_COUNT; s++) {
-    const tid = others[s]!
-    const c = byTarget.get(tid)
-    const baseByte = byteOffset + SAB_EO_BASE_BYTE + s * SAB_EO_SLOT_BYTES
-    const fi = baseByte / 8
-    if (c?.visible) {
-      float64View[fi] = c.normX
-      float64View[fi + 1] = c.normY
-      float64View[fi + 2] = 1
-      float64View[fi + 3] = c.deltaMslM ?? 0
-      float64View[fi + 4] = c.slantRangeM ?? 0
-    } else {
-      float64View[fi] = 0
-      float64View[fi + 1] = 0
-      float64View[fi + 2] = 0
-      float64View[fi + 3] = 0
-      float64View[fi + 4] = 0
-    }
-  }
+  writeSyntheticEOToSAB(float64View, droneIdx, msg)
 }
 
 self.onmessage = (event) => {
