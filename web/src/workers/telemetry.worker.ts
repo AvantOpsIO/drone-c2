@@ -10,10 +10,13 @@
  */
 
 import type { TelemetryMessage } from '../types/telemetry'
-
-/** Keep in sync with `web/src/utils/droneLayout.ts` (tests assert the value). */
-const SAB_DRONE_STRIDE = 112
-const DRONE_IDS = ['drone-1', 'drone-2', 'drone-3', 'drone-4', 'drone-5']
+import {
+  DRONE_IDS,
+  SAB_DRONE_STRIDE,
+  SAB_EO_BASE_BYTE,
+  SAB_EO_SLOT_BYTES,
+  SAB_EO_SLOT_COUNT,
+} from '../constants/tactical'
 
 const GPS_FIX_CODES: Record<string, number> = {
   NO_FIX: 0, '2D_FIX': 1, '3D_FIX': 2, RTK_FLOAT: 3, RTK_FIXED: 4,
@@ -118,7 +121,7 @@ function handleMessage(raw: string) {
 
   msgCount++
 
-  const droneIdx = DRONE_IDS.indexOf(msg.droneId)
+  const droneIdx = (DRONE_IDS as readonly string[]).indexOf(msg.droneId)
   if (droneIdx === -1) return
 
   const prevSeq = lastSeq[msg.droneId] ?? 0
@@ -192,6 +195,36 @@ function writeSAB(droneIdx: number, msg: TelemetryMessage) {
   Atomics.store(int32View, i32Base + 25, GPS_FIX_CODES[msg.gpsFixType] ?? 0)
   Atomics.store(int32View, i32Base + 26, msg.armed ? 1 : 0)
   Atomics.store(int32View, i32Base + 27, FLIGHT_MODE_CODES[msg.flightMode] ?? 0)
+
+  writeSyntheticEOToSAB(droneIdx, msg)
+}
+
+function writeSyntheticEOToSAB(droneIdx: number, msg: TelemetryMessage) {
+  if (!float64View) return
+  const byteOffset = droneIdx * SAB_DRONE_STRIDE
+  const others = DRONE_IDS.filter((_, i) => i !== droneIdx)
+  const byTarget = new Map(
+    (msg.syntheticEOContacts ?? []).map((c) => [c.targetDroneId, c]),
+  )
+  for (let s = 0; s < SAB_EO_SLOT_COUNT; s++) {
+    const tid = others[s]!
+    const c = byTarget.get(tid)
+    const baseByte = byteOffset + SAB_EO_BASE_BYTE + s * SAB_EO_SLOT_BYTES
+    const fi = baseByte / 8
+    if (c?.visible) {
+      float64View[fi] = c.normX
+      float64View[fi + 1] = c.normY
+      float64View[fi + 2] = 1
+      float64View[fi + 3] = c.deltaMslM ?? 0
+      float64View[fi + 4] = c.slantRangeM ?? 0
+    } else {
+      float64View[fi] = 0
+      float64View[fi + 1] = 0
+      float64View[fi + 2] = 0
+      float64View[fi + 3] = 0
+      float64View[fi + 4] = 0
+    }
+  }
 }
 
 self.onmessage = (event) => {

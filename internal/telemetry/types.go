@@ -44,6 +44,22 @@ type TelemetryMessage struct {
 	EncryptionStatus string `json:"encryptionStatus"`
 
 	BoundingBoxes []BoundingBox `json:"boundingBoxes"`
+
+	// SyntheticEOContacts: body-fixed FLIR contact positions from the synthetic
+	// process (normalized 0–1 frame). The browser Tier A path copies these to SAB.
+	SyntheticEOContacts []SyntheticEOContact `json:"syntheticEOContacts,omitempty"`
+}
+
+// SyntheticEOContact is one friendly track in the notional EO/IR feed for this drone.
+// DeltaMslM is target AltitudeMSL minus own (positive = target higher). SlantRangeM is
+// 3D range own→target in meters (synthetic fused track, not passive EO measurement).
+type SyntheticEOContact struct {
+	TargetDroneID string  `json:"targetDroneId"`
+	NormX         float64 `json:"normX"`
+	NormY         float64 `json:"normY"`
+	Visible       bool    `json:"visible"`
+	DeltaMslM     float64 `json:"deltaMslM"`
+	SlantRangeM   float64 `json:"slantRangeM"`
 }
 
 // BoundingBox represents an AI/ML inference detection overlaid on the sensor

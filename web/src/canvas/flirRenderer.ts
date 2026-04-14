@@ -1,6 +1,9 @@
 /**
  * Imperative FLIR/EO canvas renderer — Tier A data path.
  *
+ * Friendly tracks are drawn from server-authored synthetic EO contacts in the SAB
+ * (normalized 0–1); no client-side map projection for those dots.
+ *
  * WHY procedural noise terrain: Real FLIR feeds show organic thermal variation
  * across terrain — warm roads, cool water, mixed vegetation. Flat ellipses
  * look like a PowerPoint slide. Value noise with multiple octaves produces
@@ -8,7 +11,16 @@
  * impression of a real gimbal-stabilized sensor looking at the ground.
  */
 
-import { SAB_OFFSETS, SAB_DRONE_STRIDE, DRONE_COUNT, COLORS, DRONE_CALLSIGNS, DRONE_IDS } from '../constants/tactical'
+import {
+  SAB_OFFSETS,
+  SAB_DRONE_STRIDE,
+  SAB_EO_BASE_BYTE,
+  SAB_EO_SLOT_BYTES,
+  SAB_EO_SLOT_COUNT,
+  DRONE_IDS,
+  COLORS,
+  DRONE_CALLSIGNS,
+} from '../constants/tactical'
 import { FLIGHT_MODE_LABELS, type BoundingBox } from '../types/telemetry'
 
 let frameCounter = 0
@@ -88,6 +100,94 @@ let terrainBuffer: ImageData | null = null
 let lastTerrainW = 0
 let lastTerrainH = 0
 
+/** Presentation-only smoothing (Tier A): damps telemetry step noise so FLIR terrain + EO dots do not micro-shake at rAF cadence. */
+let flirSmoothDroneIdx = -1
+let smoothLat = 0
+let smoothLon = 0
+const smoothEOX = [0.5, 0.5, 0.5, 0.5]
+const smoothEOY = [0.5, 0.5, 0.5, 0.5]
+const smoothDMSL = [0, 0, 0, 0]
+const smoothSLR = [0, 0, 0, 0]
+
+const FLIR_TERRAIN_SMOOTH = 0.14
+const FLIR_EO_SMOOTH = 0.22
+
+function resetFlirSmoothing(lat: number, lon: number) {
+  smoothLat = lat
+  smoothLon = lon
+  for (let s = 0; s < SAB_EO_SLOT_COUNT; s++) {
+    smoothEOX[s] = 0.5
+    smoothEOY[s] = 0.5
+    smoothDMSL[s] = 0
+    smoothSLR[s] = 0
+  }
+}
+
+function formatDeltaMsl(m: number): string {
+  const r = Math.round(m)
+  const sign = r > 0 ? '+' : ''
+  return `\u0394MSL ${sign}${r}m`
+}
+
+function formatSlantRange(m: number): string {
+  if (!Number.isFinite(m) || m <= 0) return 'SLR --'
+  if (m >= 1000) return `SLR ${(m / 1000).toFixed(1)}km`
+  return `SLR ${Math.round(m)}m`
+}
+
+/** High-contrast label chip: readable on mottled thermal without heavy strokeText. */
+function drawFlirContactLabels(
+  ctx: CanvasRenderingContext2D,
+  lx: number,
+  y0: number,
+  callsign: string,
+  line1: string,
+  line2: string,
+) {
+  const fontCs = '600 12px monospace'
+  const fontMeta = '10px monospace'
+  const padX = 7
+  const padY = 6
+  const leadCs = 16
+  const leadMeta = 14
+
+  ctx.save()
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+
+  ctx.font = fontCs
+  const w0 = ctx.measureText(callsign).width
+  ctx.font = fontMeta
+  const w1 = ctx.measureText(line1).width
+  const w2 = ctx.measureText(line2).width
+  const innerW = Math.max(w0, w1, w2)
+  const boxW = innerW + padX * 2
+  const y1 = y0 + leadCs
+  const y2 = y1 + leadMeta
+  const boxTop = y0 - 11
+  const boxBottom = y2 + 5
+  const boxH = boxBottom - boxTop + padY * 2
+  const boxX = lx - padX
+  const boxY = boxTop - padY
+
+  ctx.beginPath()
+  ctx.roundRect(boxX, boxY, boxW, boxH, 6)
+  ctx.fillStyle = 'rgba(6, 12, 10, 0.9)'
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  ctx.fillStyle = '#f2faf4'
+  ctx.font = fontCs
+  ctx.fillText(callsign, lx, y0)
+  ctx.fillStyle = '#dce8de'
+  ctx.font = fontMeta
+  ctx.fillText(line1, lx, y1)
+  ctx.fillText(line2, lx, y2)
+  ctx.restore()
+}
+
 /** Read a Float64 from the SAB. */
 function readF64(view: Float64Array, droneByteOffset: number, fieldOffset: number): number {
   return view[(droneByteOffset + fieldOffset) / 8]
@@ -131,6 +231,24 @@ export function renderFlir(
     armed = readI32(int32View, off, SAB_OFFSETS.armed)
     modeCode = readI32(int32View, off, SAB_OFFSETS.flightModeCode)
     timestamp = readF64(float64View, off, SAB_OFFSETS.timestamp)
+  } else {
+    flirSmoothDroneIdx = -1
+  }
+
+  let terrainLat = lat
+  let terrainLon = lon
+  if (
+    float64View && int32View && selectedDroneIdx >= 0
+    && isFinite(lat) && isFinite(lon) && (lat !== 0 || lon !== 0)
+  ) {
+    if (selectedDroneIdx !== flirSmoothDroneIdx) {
+      flirSmoothDroneIdx = selectedDroneIdx
+      resetFlirSmoothing(lat, lon)
+    }
+    smoothLat += (lat - smoothLat) * FLIR_TERRAIN_SMOOTH
+    smoothLon += (lon - smoothLon) * FLIR_TERRAIN_SMOOTH
+    terrainLat = smoothLat
+    terrainLon = smoothLon
   }
 
   const droneId = selectedDroneIdx >= 0 ? DRONE_IDS[selectedDroneIdx] : null
@@ -153,9 +271,9 @@ export function renderFlir(
   }
 
   const data = terrainBuffer.data
-  // Scroll offset tied to drone lat/lon so terrain moves as drone flies.
-  const ox = lon * 5000
-  const oy = lat * 5000
+  // Scroll offset tied to smoothed lat/lon so thermal does not jitter with every telemetry tick.
+  const ox = terrainLon * 5000
+  const oy = terrainLat * 5000
   const noiseScale = 0.035
   const time = frameCounter * 0.002
 
@@ -212,41 +330,65 @@ export function renderFlir(
   ctx.fillStyle = vGrad
   ctx.fillRect(0, 0, width, height)
 
-  // --- Other drones in FOV as hot spots ---
-  if (float64View && int32View && selectedDroneIdx >= 0) {
-    for (let i = 0; i < DRONE_COUNT; i++) {
-      if (i === selectedDroneIdx) continue
-      const off = i * SAB_DRONE_STRIDE
-      const oLat = readF64(float64View, off, SAB_OFFSETS.lat)
-      const oLon = readF64(float64View, off, SAB_OFFSETS.lon)
+  // --- Other drones: Tier A reads synthetic EO contacts from SAB (server-authored). ---
+  if (float64View && selectedDroneIdx >= 0) {
+    const off = selectedDroneIdx * SAB_DRONE_STRIDE
+    const others = DRONE_IDS.filter((_, i) => i !== selectedDroneIdx)
 
-      const dlat = (oLat - lat) * 111320
-      const dlon = (oLon - lon) * 111320 * Math.cos(lat * Math.PI / 180)
-      const dist = Math.sqrt(dlat * dlat + dlon * dlon)
-
-      if (dist < 3000) {
-        const px = width / 2 + (dlon / 3000) * (width / 2)
-        const py = height / 2 - (dlat / 3000) * (height / 2)
-
-        if (px > 0 && px < width && py > 0 && py < height) {
-          // Hot spot glow
-          const glow = ctx.createRadialGradient(px, py, 0, px, py, 12)
-          glow.addColorStop(0, 'rgba(255,255,255,0.9)')
-          glow.addColorStop(0.5, 'rgba(255,255,255,0.3)')
-          glow.addColorStop(1, 'rgba(255,255,255,0)')
-          ctx.fillStyle = glow
-          ctx.fillRect(px - 12, py - 12, 24, 24)
-
-          // Bright core
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(px - 2, py - 2, 5, 5)
-
-          const otherId = DRONE_IDS[i]
-          ctx.font = '10px monospace'
-          ctx.fillStyle = COLORS.textPrimary
-          ctx.fillText(DRONE_CALLSIGNS[otherId] ?? otherId, px + 8, py + 3)
-        }
+    // Pass 1: smooth all slots (canvas draw order does not affect state).
+    type DrawSlot = { slot: number; slr: number; px: number; py: number }
+    const toDraw: DrawSlot[] = []
+    for (let s = 0; s < SAB_EO_SLOT_COUNT; s++) {
+      const eoByte = SAB_EO_BASE_BYTE + s * SAB_EO_SLOT_BYTES
+      const vis = readF64(float64View, off, eoByte + 16)
+      if (vis < 0.5) {
+        smoothEOX[s] += (0.5 - smoothEOX[s]) * 0.12
+        smoothEOY[s] += (0.5 - smoothEOY[s]) * 0.12
+        smoothDMSL[s] += (0 - smoothDMSL[s]) * 0.12
+        smoothSLR[s] += (0 - smoothSLR[s]) * 0.12
+        continue
       }
+      const nx = readF64(float64View, off, eoByte)
+      const ny = readF64(float64View, off, eoByte + 8)
+      const dMsl = readF64(float64View, off, eoByte + 24)
+      const slr = readF64(float64View, off, eoByte + 32)
+      smoothEOX[s] += (nx - smoothEOX[s]) * FLIR_EO_SMOOTH
+      smoothEOY[s] += (ny - smoothEOY[s]) * FLIR_EO_SMOOTH
+      smoothDMSL[s] += (dMsl - smoothDMSL[s]) * FLIR_EO_SMOOTH
+      smoothSLR[s] += (slr - smoothSLR[s]) * FLIR_EO_SMOOTH
+      const px = smoothEOX[s] * width
+      const py = smoothEOY[s] * height
+      if (px > 0 && px < width && py > 0 && py < height) {
+        toDraw.push({ slot: s, slr, px, py })
+      }
+    }
+
+    // Pass 2: farther contacts first so nearer SLR paints on top (2D canvas has no z-buffer).
+    toDraw.sort((a, b) => b.slr - a.slr || a.slot - b.slot)
+
+    for (const { slot: s, px, py } of toDraw) {
+      const glow = ctx.createRadialGradient(px, py, 0, px, py, 12)
+      glow.addColorStop(0, 'rgba(255,255,255,0.9)')
+      glow.addColorStop(0.5, 'rgba(255,255,255,0.3)')
+      glow.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = glow
+      ctx.fillRect(px - 12, py - 12, 24, 24)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(px - 2, py - 2, 5, 5)
+
+      const otherId = others[s]!
+      const lx = px + 10
+      const y0 = py + 4
+      const cs = DRONE_CALLSIGNS[otherId] ?? otherId
+      drawFlirContactLabels(
+        ctx,
+        lx,
+        y0,
+        cs,
+        formatDeltaMsl(smoothDMSL[s]),
+        formatSlantRange(smoothSLR[s]),
+      )
     }
   }
 

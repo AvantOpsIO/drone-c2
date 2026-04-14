@@ -4,7 +4,7 @@
  * Reads all 5 drones from SharedArrayBuffer each frame and draws:
  * - Historical trail (fading opacity)
  * - Blue force icon with heading indicator
- * - 30-second predicted track (dashed)
+ * - 30-second predicted track (dashed), with dots at +10 / +20 / +30 s
  * - CPA warning indicators
  * - Waypoint marker and line
  *
@@ -137,7 +137,7 @@ export function renderTracks(
     ctx.stroke()
     ctx.setLineDash([])
 
-    // Time markers on predicted track
+    // Time markers: one dot per prediction step (10 s, 20 s, 30 s ahead).
     for (let j = 0; j < predictions[i].length; j++) {
       const pp = project(predictions[i][j].lat, predictions[i][j].lon)
       ctx.fillStyle = COLORS.blueForcePredicted
@@ -172,10 +172,18 @@ export function renderTracks(
     ctx.lineTo(cp.x + Math.sin(hRad) * (radius + 12), cp.y - Math.cos(hRad) * (radius + 12))
     ctx.stroke()
 
-    // Callsign label
+    // Callsign label (dark on light tiles; white stroke for dark map pockets)
+    const label = DRONE_CALLSIGNS[droneId] ?? droneId
+    const lx = cp.x + radius + 6
+    const ly = cp.y + 4
     ctx.font = '11px monospace'
-    ctx.fillStyle = isSelected ? '#ffffff' : COLORS.textPrimary
-    ctx.fillText(DRONE_CALLSIGNS[droneId] ?? droneId, cp.x + radius + 6, cp.y + 4)
+    ctx.lineJoin = 'round'
+    ctx.miterLimit = 2
+    ctx.lineWidth = isSelected ? 4 : 3
+    ctx.strokeStyle = COLORS.mapTrackCallsignStroke
+    ctx.strokeText(label, lx, ly)
+    ctx.fillStyle = isSelected ? COLORS.mapTrackCallsignFillSelected : COLORS.mapTrackCallsignFill
+    ctx.fillText(label, lx, ly)
   }
 
   // CPA warning

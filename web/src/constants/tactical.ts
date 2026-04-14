@@ -54,6 +54,11 @@ export const COLORS = {
   debugHighlightText: '#f5ebb8',
   debugChipText: '#fff9e6',
 
+  /** Leaflet track canvas: dark fill + stroke so callsigns read on light terrain tiles */
+  mapTrackCallsignFill: '#0f172a',
+  mapTrackCallsignFillSelected: '#020617',
+  mapTrackCallsignStroke: 'rgba(255, 255, 255, 0.92)',
+
   /** Leaflet on light raster tiles: controls stay readable */
   mapTileGutter: '#dcdcdc',
   mapControlBg: '#f4f4f4',
@@ -75,10 +80,8 @@ export const THRESHOLDS = {
 } as const
 
 // --- SharedArrayBuffer Layout ---
-// Per-drone byte offsets into the SharedArrayBuffer. 112 bytes per drone.
-// This schema is the contract between the Web Worker (writer) and the rAF
-// canvas renderers (readers). Changing offsets here requires matching changes
-// in telemetry.worker.ts.
+// Bytes 0..111: pose + encoded ints (core). Then synthetic EO/IR slots (normX, normY,
+// visible, deltaMslM, slantRangeM per other drone). Stride must match worker + Go hub.
 export const SAB_OFFSETS = {
   lat: 0,            // Float64
   lon: 8,            // Float64
@@ -100,10 +103,17 @@ export const SAB_OFFSETS = {
   flightModeCode: 108, // Int32 (encoded)
 } as const
 
-export const SAB_DRONE_STRIDE = 112 // bytes per drone
+/** Core row size before synthetic EO contact floats. */
+export const SAB_CORE_BYTES = 112
+/** One slot: normX, normY, visible, deltaMslM, slantRangeM (Float64 each). */
+export const SAB_EO_SLOT_BYTES = 40
+/** One row per other drone in DRONE_IDS order (skip self). */
+export const SAB_EO_SLOT_COUNT = 4
+export const SAB_EO_BASE_BYTE = 112
+
+export const SAB_DRONE_STRIDE = SAB_CORE_BYTES + SAB_EO_SLOT_COUNT * SAB_EO_SLOT_BYTES
 export const DRONE_COUNT = 5
 
-// Total SAB size: 112 bytes * 5 drones = 560 bytes
 export const SAB_TOTAL_SIZE = SAB_DRONE_STRIDE * DRONE_COUNT
 
 // --- Drone IDs ---

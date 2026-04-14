@@ -97,6 +97,16 @@ func (h *Hub) Run(ctx context.Context) {
 			return
 		case msg := <-h.incoming:
 			msg.ReceivedAt = time.Now()
+
+			h.posMu.RLock()
+			world := make(map[string]TelemetryMessage, len(h.positions)+1)
+			for k, v := range h.positions {
+				world[k] = v
+			}
+			h.posMu.RUnlock()
+			world[msg.DroneID] = msg
+			msg.SyntheticEOContacts = BuildSyntheticEOContacts(msg, world, DefaultSyntheticEOParams())
+
 			data, err := json.Marshal(msg)
 			if err != nil {
 				slog.Error("hub_marshal_error", "error", err, "drone", msg.DroneID)

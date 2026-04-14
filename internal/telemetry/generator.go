@@ -115,7 +115,8 @@ func runDrone(ctx context.Context, spec droneSpec, out chan<- TelemetryMessage) 
 		} else if headingDiff < -maxTurn {
 			headingDiff = -maxTurn
 		}
-		heading += headingDiff + (r.Float64()-0.5)*0.5 // slight oscillation
+		// No per-tick heading jitter: it shakes body-fixed EO contacts and FLIR terrain scroll.
+		heading += headingDiff
 		heading = math.Mod(heading+360, 360)
 
 		dt := 0.1 // seconds per tick at base rate
@@ -203,7 +204,7 @@ func runDrone(ctx context.Context, spec droneSpec, out chan<- TelemetryMessage) 
 			Lon:                  lon,
 			AltitudeMSL:         alt + 65, // Yuma elevation ~65m
 			AltitudeAGL:         alt,
-			GroundSpeed:          speed + (r.Float64()-0.5)*2,
+			GroundSpeed:          speed + (r.Float64()-0.5)*0.35,
 			VerticalSpeed:        vertSpeed,
 			Heading:              heading,
 			FlightMode:           flightMode,

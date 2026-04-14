@@ -37,6 +37,20 @@ export interface TelemetryMessage {
   encryptionStatus: EncryptionStatus
 
   boundingBoxes: BoundingBox[]
+
+  /** Synthetic EO/IR contacts from server (normalized frame); copied to SAB by worker. */
+  syntheticEOContacts?: SyntheticEOContact[]
+}
+
+export interface SyntheticEOContact {
+  targetDroneId: string
+  normX: number
+  normY: number
+  visible: boolean
+  /** Target MSL minus own (m); positive = target higher. */
+  deltaMslM?: number
+  /** 3D range own to target (m); synthetic fused track. */
+  slantRangeM?: number
 }
 
 export interface BoundingBox {
