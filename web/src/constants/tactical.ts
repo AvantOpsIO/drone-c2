@@ -4,6 +4,10 @@
  * Every color, threshold, and layout constant lives here — not scattered across
  * components. This makes it trivial to re-skin for different operational contexts
  * (e.g., maritime blue instead of land green) without hunting through 30 files.
+ *
+ * At runtime, `applyC2CssVariables()` in main.tsx mirrors COLORS onto
+ * `document.documentElement` as `--c2-*` so index.css and React inline styles
+ * both read the same tokens (see theme/c2CssVars.ts).
  */
 
 // --- Colors ---
@@ -42,10 +46,22 @@ export const COLORS = {
   /** Tier / layers debug UI: chips, DATA LAYERS control, floating panel */
   debugHighlightBorder: '#e4c94a',
   debugHighlightBg: 'rgba(255, 236, 160, 0.28)',
+  /** Opaque chip fill so tier labels read over video and drone cards */
+  debugChipBg: '#3f3b2a',
   /** Flat fill for debug panel body + header (no gradient) */
   debugPanelBg: '#2c2b22',
   debugHighlightBgPanel: 'rgba(255, 240, 180, 0.1)',
   debugHighlightText: '#f5ebb8',
+  debugChipText: '#fff9e6',
+
+  /** Leaflet on light raster tiles: controls stay readable */
+  mapTileGutter: '#dcdcdc',
+  mapControlBg: '#f4f4f4',
+  mapControlFg: '#1a1a1a',
+  mapControlBorder: '#b0b0b0',
+  mapControlBgHover: '#e8e8e8',
+  mapAttributionBg: 'rgba(255, 255, 255, 0.88)',
+  mapAttributionFg: '#333333',
 } as const
 
 // --- Thresholds ---

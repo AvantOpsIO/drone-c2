@@ -1,6 +1,7 @@
 import { useUIStore, selectSelectedDroneId } from '../../store/uiStore'
 import { useTelemetryStore, selectDroneMessage } from '../../store/telemetryStore'
-import { COLORS, DRONE_CALLSIGNS } from '../../constants/tactical'
+import { DRONE_CALLSIGNS } from '../../constants/tactical'
+import { c2 } from '../../theme/c2CssVars'
 import { CommandPanel } from '../command/CommandPanel'
 
 /**
@@ -24,8 +25,8 @@ export function DetailPanel() {
       height: isOpen ? 200 : 0,
       overflow: 'hidden',
       transition: 'height 0.25s ease-out',
-      borderTop: isOpen ? `1px solid ${COLORS.border}` : 'none',
-      background: COLORS.surfacePrimary,
+      borderTop: isOpen ? `1px solid ${c2('border')}` : 'none',
+      background: c2('surfacePrimary'),
       display: 'flex',
       flexShrink: 0,
     }}>
@@ -42,8 +43,8 @@ export function DetailPanel() {
             overflow: 'hidden',
           }}>
             <TelValue label="CALLSIGN" value={callsign} />
-            <TelValue label="FLIGHT MODE" value={msg.flightMode} color={msg.flightMode === 'RTL' ? COLORS.alertWarning : COLORS.safe} />
-            <TelValue label="ARMED" value={msg.armed ? 'ARMED' : 'SAFE'} color={msg.armed ? COLORS.alertCritical : COLORS.safe} />
+            <TelValue label="FLIGHT MODE" value={msg.flightMode} color={msg.flightMode === 'RTL' ? c2('alertWarning') : c2('safe')} />
+            <TelValue label="ARMED" value={msg.armed ? 'ARMED' : 'SAFE'} color={msg.armed ? c2('alertCritical') : c2('safe')} />
             <TelValue label="IFF" value={msg.iffMode} />
 
             <TelValue label="LAT" value={msg.lat.toFixed(6)} />
@@ -62,12 +63,12 @@ export function DetailPanel() {
             <TelValue label="ENCRYPTION" value={msg.encryptionStatus} icon={msg.encryptionStatus === 'ENCRYPTED' ? '\uD83D\uDD12' : '\uD83D\uDD13'} />
 
             <TelValue label="BATT" value={`${msg.batteryVoltage.toFixed(1)}V ${msg.batteryPercent.toFixed(0)}%`}
-              color={msg.batteryPercent < 20 ? COLORS.alertCritical : msg.batteryPercent < 50 ? COLORS.alertWarning : COLORS.safe} />
+              color={msg.batteryPercent < 20 ? c2('alertCritical') : msg.batteryPercent < 50 ? c2('alertWarning') : c2('safe')} />
             <TelValue label="BATT TIME" value={`${Math.floor(msg.batteryTimeRemaining / 60)}m ${msg.batteryTimeRemaining % 60}s`} />
             <TelValue label="RSSI" value={`${msg.rssi} dBm`}
-              color={msg.rssi < -80 ? COLORS.alertCritical : msg.rssi < -70 ? COLORS.alertWarning : COLORS.safe} />
+              color={msg.rssi < -80 ? c2('alertCritical') : msg.rssi < -70 ? c2('alertWarning') : c2('safe')} />
             <TelValue label="LINK" value={`${msg.linkQuality}%`}
-              color={msg.linkQuality < 30 ? COLORS.alertCritical : msg.linkQuality < 50 ? COLORS.alertWarning : COLORS.safe} />
+              color={msg.linkQuality < 30 ? c2('alertCritical') : msg.linkQuality < 50 ? c2('alertWarning') : c2('safe')} />
 
             <TelValue label="GPS" value={`${msg.gpsFixType} (${msg.satelliteCount} sats)`} />
             <TelValue label="CMD LAT" value={`${msg.commandLatency}ms`} />
@@ -76,7 +77,7 @@ export function DetailPanel() {
           {/* Right: command panel */}
           <div style={{
             width: 280,
-            borderLeft: `1px solid ${COLORS.border}`,
+            borderLeft: `1px solid ${c2('border')}`,
             padding: '10px 12px',
             flexShrink: 0,
           }}>
@@ -97,14 +98,14 @@ function TelValue({ label, value, color, extra, icon }: {
 }) {
   return (
     <div style={{ lineHeight: 1.3 }}>
-      <div style={{ fontSize: 9, color: COLORS.textMuted, letterSpacing: '0.05em' }}>
+      <div style={{ fontSize: 9, color: c2('textMuted'), letterSpacing: '0.05em' }}>
         {label}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {icon && <span style={{ fontSize: 12 }}>{icon}</span>}
         <span className="mono" style={{
           fontSize: 12,
-          color: color ?? COLORS.textPrimary,
+          color: color ?? c2('textPrimary'),
           whiteSpace: 'nowrap',
         }}>
           {value}
@@ -124,9 +125,9 @@ function CompassRose({ heading }: { heading: number }) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18"
       style={{ transform: `rotate(${heading}deg)`, transition: 'transform 0.2s' }}>
-      <circle cx="9" cy="9" r="8" fill="none" stroke={COLORS.textMuted} strokeWidth="1" />
-      <line x1="9" y1="9" x2="9" y2="2" stroke={COLORS.alertCritical} strokeWidth="1.5" />
-      <line x1="9" y1="9" x2="9" y2="16" stroke={COLORS.textMuted} strokeWidth="1" />
+      <circle cx="9" cy="9" r="8" fill="none" stroke={c2('textMuted')} strokeWidth="1" />
+      <line x1="9" y1="9" x2="9" y2="2" stroke={c2('alertCritical')} strokeWidth="1.5" />
+      <line x1="9" y1="9" x2="9" y2="16" stroke={c2('textMuted')} strokeWidth="1" />
     </svg>
   )
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type CSSProperties } from 'react'
-import { COLORS } from '../../constants/tactical'
+import { c2 } from '../../theme/c2CssVars'
 import { useTelemetryContext } from '../../hooks/useTelemetryWorker'
 import {
   useUIStore,
@@ -18,12 +18,12 @@ const panelStyle: CSSProperties = {
   maxHeight: 'min(70vh, 520px)',
   display: 'flex',
   flexDirection: 'column',
-  background: COLORS.debugPanelBg,
-  border: `2px solid ${COLORS.debugHighlightBorder}`,
+  background: c2('debugPanelBg'),
+  border: `2px solid ${c2('debugHighlightBorder')}`,
   boxShadow: '0 8px 24px rgba(0,0,0,0.55)',
   fontSize: 10,
   fontFamily: "'JetBrains Mono', monospace",
-  color: COLORS.textSecondary,
+  color: c2('textSecondary'),
   overflow: 'hidden',
 }
 
@@ -32,15 +32,15 @@ const headerStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: '6px 8px',
-  background: COLORS.debugPanelBg,
-  borderBottom: `1px solid rgba(228, 201, 74, 0.45)`,
+  background: c2('debugPanelBg'),
+  borderBottom: `1px solid color-mix(in srgb, ${c2('debugHighlightBorder')} 45%, transparent)`,
   cursor: 'grab',
   userSelect: 'none',
   flexShrink: 0,
 }
 
 const sectionTitle: CSSProperties = {
-  color: COLORS.debugHighlightText,
+  color: c2('debugHighlightText'),
   fontWeight: 700,
   marginBottom: 4,
   letterSpacing: '0.06em',
@@ -97,6 +97,8 @@ export function LayersDebugPanel() {
 
   const onHeaderPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    // Buttons live inside the header; do not start drag or capture (breaks click).
+    if ((e.target as HTMLElement).closest('button')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragRef.current = {
       pointerId: e.pointerId,
@@ -159,11 +161,12 @@ export function LayersDebugPanel() {
           <button
             type="button"
             className="mono"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => useUIStore.getState().setLayersDebugMinimized(false)}
             style={{
               background: 'none',
               border: 'none',
-              color: COLORS.textPrimary,
+              color: c2('textPrimary'),
               cursor: 'pointer',
               fontSize: 10,
               fontWeight: 700,
@@ -176,15 +179,16 @@ export function LayersDebugPanel() {
           <button
             type="button"
             aria-label="Close"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(ev) => {
               ev.stopPropagation()
               useUIStore.getState().closeLayersDebugPanel()
             }}
             style={{
               marginLeft: 8,
-              background: COLORS.debugHighlightBgPanel,
-              border: `1px solid ${COLORS.debugHighlightBorder}`,
-              color: COLORS.debugHighlightText,
+              background: c2('debugHighlightBgPanel'),
+              border: `1px solid ${c2('debugHighlightBorder')}`,
+              color: c2('debugHighlightText'),
               cursor: 'pointer',
               fontSize: 9,
               padding: '0 6px',
@@ -215,14 +219,14 @@ export function LayersDebugPanel() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-            <span className="mono" style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 10 }}>
+            <span className="mono" style={{ color: c2('textPrimary'), fontWeight: 700, fontSize: 10 }}>
               DATA LAYERS
             </span>
             <span
               className="mono"
               style={{
                 fontSize: 8,
-                color: COLORS.debugHighlightBorder,
+                color: c2('debugHighlightBorder'),
                 fontWeight: 600,
                 letterSpacing: '0.08em',
               }}
@@ -234,11 +238,12 @@ export function LayersDebugPanel() {
             <button
               type="button"
               title="Minimize"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => useUIStore.getState().setLayersDebugMinimized(true)}
               style={{
-                background: COLORS.debugHighlightBgPanel,
-                border: `1px solid ${COLORS.debugHighlightBorder}`,
-                color: COLORS.debugHighlightText,
+                background: c2('debugHighlightBgPanel'),
+                border: `1px solid ${c2('debugHighlightBorder')}`,
+                color: c2('debugHighlightText'),
                 cursor: 'pointer',
                 fontSize: 9,
                 padding: '0 6px',
@@ -250,11 +255,12 @@ export function LayersDebugPanel() {
               type="button"
               aria-label="Close"
               title="Close"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => useUIStore.getState().closeLayersDebugPanel()}
               style={{
-                background: COLORS.debugHighlightBgPanel,
-                border: `1px solid ${COLORS.debugHighlightBorder}`,
-                color: COLORS.debugHighlightText,
+                background: c2('debugHighlightBgPanel'),
+                border: `1px solid ${c2('debugHighlightBorder')}`,
+                color: c2('debugHighlightText'),
                 cursor: 'pointer',
                 fontSize: 9,
                 padding: '0 6px',
@@ -279,7 +285,7 @@ export function LayersDebugPanel() {
         <div style={{ marginBottom: 10 }}>
           <div style={sectionTitle}>TIER A</div>
           <div>WebSocket to worker, numeric SharedArrayBuffer, rAF canvases.</div>
-          <div style={{ marginTop: 4, color: COLORS.textMuted }}>
+          <div style={{ marginTop: 4, color: c2('textMuted') }}>
             About 10 Hz per drone on the wire. Draw loop follows display refresh.
           </div>
         </div>
@@ -287,7 +293,7 @@ export function LayersDebugPanel() {
         <div style={{ marginBottom: 10 }}>
           <div style={sectionTitle}>TIER B</div>
           <div>postMessage to Zustand, about 2 Hz plus urgent (mode, armed, alerts).</div>
-          <div style={{ marginTop: 4, color: COLORS.textMuted }}>
+          <div style={{ marginTop: 4, color: c2('textMuted') }}>
             Cards, detail, summary strip, trails, bounding boxes.
           </div>
         </div>
@@ -313,7 +319,7 @@ export function LayersDebugPanel() {
           <span>Show region chips</span>
         </label>
 
-        <div style={{ marginTop: 10, color: COLORS.textMuted, fontSize: 9 }}>
+        <div style={{ marginTop: 10, color: c2('textMuted'), fontSize: 9 }}>
           Toggle: DATA LAYERS in top bar or Backquote key (not in inputs).
         </div>
       </div>

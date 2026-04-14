@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useUIStore, selectWaypointLat, selectWaypointLon } from '../../store/uiStore'
 import { useTelemetryStore, selectDroneMessage } from '../../store/telemetryStore'
-import { COLORS } from '../../constants/tactical'
+import { c2 } from '../../theme/c2CssVars'
 
 /**
  * CommandPanel — operator command interface with safety confirmation pattern.
@@ -34,18 +34,18 @@ export function CommandPanel({ droneId }: CommandPanelProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%' }}>
-      <div style={{ fontSize: 10, color: COLORS.textMuted, letterSpacing: '0.1em', marginBottom: 4 }}>
+      <div style={{ fontSize: 10, color: c2('textMuted'), letterSpacing: '0.1em', marginBottom: 4 }}>
         COMMAND
       </div>
 
       {waypoint ? (
-        <div style={{ fontSize: 11, color: COLORS.waypoint }}>
+        <div style={{ fontSize: 11, color: c2('waypoint') }}>
           <span className="mono">
             WPT: {waypoint.lat.toFixed(6)}, {waypoint.lon.toFixed(6)}
           </span>
         </div>
       ) : (
-        <div style={{ fontSize: 10, color: COLORS.textMuted }}>
+        <div style={{ fontSize: 10, color: c2('textMuted') }}>
           Click map to set waypoint
         </div>
       )}
@@ -144,24 +144,24 @@ function CommandButton({
     }
   }, [])
 
-  const bgColor = state === 'confirming' ? COLORS.alertWarning + '33'
-    : state === 'sending' ? COLORS.blueForce + '22'
-    : state === 'accepted' ? COLORS.safe + '22'
-    : state === 'failed' ? COLORS.alertCritical + '22'
+  const bgColor = state === 'confirming' ? `color-mix(in srgb, ${c2('alertWarning')} 20%, transparent)`
+    : state === 'sending' ? `color-mix(in srgb, ${c2('blueForce')} 13%, transparent)`
+    : state === 'accepted' ? `color-mix(in srgb, ${c2('safe')} 13%, transparent)`
+    : state === 'failed' ? `color-mix(in srgb, ${c2('alertCritical')} 13%, transparent)`
     : 'transparent'
 
-  const borderColor = state === 'confirming' ? COLORS.alertWarning
-    : state === 'sending' ? COLORS.blueForce
-    : state === 'accepted' ? COLORS.safe
-    : state === 'failed' ? COLORS.alertCritical
-    : COLORS.border
+  const borderColor = state === 'confirming' ? c2('alertWarning')
+    : state === 'sending' ? c2('blueForce')
+    : state === 'accepted' ? c2('safe')
+    : state === 'failed' ? c2('alertCritical')
+    : c2('border')
 
-  const textColor = disabled ? COLORS.textMuted
-    : state === 'confirming' ? COLORS.alertWarning
-    : state === 'sending' ? COLORS.blueForce
-    : state === 'accepted' ? COLORS.safe
-    : state === 'failed' ? COLORS.alertCritical
-    : COLORS.textPrimary
+  const textColor = disabled ? c2('textMuted')
+    : state === 'confirming' ? c2('alertWarning')
+    : state === 'sending' ? c2('blueForce')
+    : state === 'accepted' ? c2('safe')
+    : state === 'failed' ? c2('alertCritical')
+    : c2('textPrimary')
 
   const statusText = state === 'confirming' ? 'HOLD TO CONFIRM...'
     : state === 'sending' ? 'SENDING...'
@@ -203,9 +203,9 @@ function CommandButton({
             padding: '6px 8px',
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 10,
-            background: COLORS.surfaceSecondary,
-            border: `1px solid ${COLORS.border}`,
-            color: COLORS.textSecondary,
+            background: c2('surfaceSecondary'),
+            border: `1px solid ${c2('border')}`,
+            color: c2('textSecondary'),
             cursor: 'pointer',
             whiteSpace: 'nowrap',
           }}
@@ -222,9 +222,9 @@ function CommandButton({
             padding: '6px 8px',
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 10,
-            background: COLORS.surfaceSecondary,
-            border: `1px solid ${COLORS.border}`,
-            color: COLORS.textSecondary,
+            background: c2('surfaceSecondary'),
+            border: `1px solid ${c2('border')}`,
+            color: c2('textSecondary'),
             cursor: 'pointer',
             whiteSpace: 'nowrap',
           }}
@@ -253,9 +253,9 @@ function ModeSelector({ droneId, currentMode }: { droneId: string; currentMode: 
         }}
         style={{
           width: '100%',
-          background: COLORS.surfaceSecondary,
-          color: COLORS.textPrimary,
-          border: `1px solid ${COLORS.border}`,
+          background: c2('surfaceSecondary'),
+          color: c2('textPrimary'),
+          border: `1px solid ${c2('border')}`,
           padding: '4px 8px',
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: 11,

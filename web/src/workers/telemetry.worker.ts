@@ -11,6 +11,7 @@
 
 import type { TelemetryMessage } from '../types/telemetry'
 
+/** Keep in sync with `web/src/utils/droneLayout.ts` (tests assert the value). */
 const SAB_DRONE_STRIDE = 112
 const DRONE_IDS = ['drone-1', 'drone-2', 'drone-3', 'drone-4', 'drone-5']
 

@@ -1,4 +1,5 @@
-import { DRONE_IDS, COLORS } from '../../constants/tactical'
+import { DRONE_IDS } from '../../constants/tactical'
+import { c2 } from '../../theme/c2CssVars'
 import { DroneCard } from './DroneCard'
 import type { DeploymentTopology } from '../../types/telemetry'
 
@@ -14,8 +15,8 @@ export function SummaryStrip({ topology }: { topology: DeploymentTopology | null
     <div style={{
       height: 80,
       display: 'flex',
-      borderTop: `1px solid ${COLORS.border}`,
-      background: COLORS.surfacePrimary,
+      borderTop: `1px solid ${c2('border')}`,
+      background: c2('surfacePrimary'),
       flexShrink: 0,
     }}>
       {DRONE_IDS.map((id, idx) => (

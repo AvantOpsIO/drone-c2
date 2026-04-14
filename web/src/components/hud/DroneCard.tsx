@@ -3,13 +3,12 @@ import { useTelemetryStore, selectDroneMessage } from '../../store/telemetryStor
 import { useTelemetryContext } from '../../hooks/useTelemetryWorker'
 import { useUIStore, selectSelectedDroneId } from '../../store/uiStore'
 import {
-  COLORS,
   THRESHOLDS,
-  FLIGHT_MODE_COLORS,
   DRONE_CALLSIGNS,
   SAB_OFFSETS,
   SAB_DRONE_STRIDE,
 } from '../../constants/tactical'
+import { c2, c2FlightMode } from '../../theme/c2CssVars'
 import type { DeploymentTopology } from '../../types/telemetry'
 
 /**
@@ -56,28 +55,31 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
 
       // Stale detection
       const isStale = (Date.now() - receivedAt) > freshnessThreshold
-      ageRef.current.style.color = isStale ? COLORS.alertWarning : COLORS.textSecondary
+      ageRef.current.style.color = isStale ? c2('alertWarning') : c2('textSecondary')
     }, 100)
 
     return () => clearInterval(interval)
   }, [float64View, droneIdx, freshnessThreshold])
 
-  const batteryColor = !msg ? COLORS.textMuted
-    : msg.batteryPercent > THRESHOLDS.batteryWarning ? COLORS.safe
-    : msg.batteryPercent > THRESHOLDS.batteryCritical ? COLORS.alertWarning
-    : COLORS.alertCritical
+  const batteryColor = !msg ? c2('textMuted')
+    : msg.batteryPercent > THRESHOLDS.batteryWarning ? c2('safe')
+    : msg.batteryPercent > THRESHOLDS.batteryCritical ? c2('alertWarning')
+    : c2('alertCritical')
 
-  const linkColor = !msg ? COLORS.textMuted
-    : msg.linkQuality > THRESHOLDS.linkQualityWarning ? COLORS.safe
-    : msg.linkQuality > THRESHOLDS.linkQualityCritical ? COLORS.alertWarning
-    : COLORS.alertCritical
+  const linkColor = !msg ? c2('textMuted')
+    : msg.linkQuality > THRESHOLDS.linkQualityWarning ? c2('safe')
+    : msg.linkQuality > THRESHOLDS.linkQualityCritical ? c2('alertWarning')
+    : c2('alertCritical')
 
-  const gpsDot = !msg ? COLORS.textMuted
+  const gpsDot = !msg ? c2('textMuted')
     : msg.gpsFixType === '3D_FIX' || msg.gpsFixType === 'RTK_FLOAT' || msg.gpsFixType === 'RTK_FIXED'
-    ? COLORS.safe
-    : COLORS.alertWarning
+    ? c2('safe')
+    : c2('alertWarning')
 
-  const modeColor = msg ? (FLIGHT_MODE_COLORS[msg.flightMode] ?? COLORS.textSecondary) : COLORS.textMuted
+  const modeFg = msg ? c2FlightMode(msg.flightMode) : c2('textMuted')
+  const modeBg = msg
+    ? `color-mix(in srgb, ${c2FlightMode(msg.flightMode)} 14%, transparent)`
+    : 'transparent'
 
   return (
     <div
@@ -85,9 +87,9 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
       style={{
         flex: 1,
         padding: '6px 10px',
-        borderRight: `1px solid ${COLORS.border}`,
-        borderTop: `2px solid ${isSelected ? COLORS.blueForce : 'transparent'}`,
-        background: isSelected ? COLORS.surfaceSecondary : COLORS.surfacePrimary,
+        borderRight: `1px solid ${c2('border')}`,
+        borderTop: `2px solid ${isSelected ? c2('blueForce') : 'transparent'}`,
+        background: isSelected ? c2('surfaceSecondary') : c2('surfacePrimary'),
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
@@ -97,14 +99,14 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span className="mono" style={{ fontSize: 12, color: COLORS.textPrimary, fontWeight: 700 }}>
+        <span className="mono" style={{ fontSize: 12, color: c2('textPrimary'), fontWeight: 700 }}>
           {callsign}
         </span>
         <span className="mono" style={{
           fontSize: 10,
           padding: '1px 5px',
-          background: `${modeColor}22`,
-          color: modeColor,
+          background: modeBg,
+          color: modeFg,
           borderRadius: 2,
         }}>
           {msg?.flightMode ?? '---'}
@@ -126,7 +128,7 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
         {/* Armed */}
         <span style={{
           fontSize: 9,
-          color: msg?.armed ? COLORS.alertCritical : COLORS.textMuted,
+          color: msg?.armed ? c2('alertCritical') : c2('textMuted'),
           fontWeight: 700,
         }}>
           {msg?.armed ? 'ARM' : 'SAFE'}
@@ -135,7 +137,7 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
 
       {/* Link quality bar */}
       <div style={{
-        height: 3, background: COLORS.border, marginTop: 4, borderRadius: 1,
+        height: 3, background: c2('border'), marginTop: 4, borderRadius: 1,
         overflow: 'hidden',
       }}>
         <div style={{
@@ -148,7 +150,7 @@ export function DroneCard({ droneId, droneIdx, topology }: DroneCardProps) {
 
       {/* Data age */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
-        <span ref={ageRef} className="mono" style={{ fontSize: 10, color: COLORS.textSecondary }}>
+        <span ref={ageRef} className="mono" style={{ fontSize: 10, color: c2('textSecondary') }}>
           ---
         </span>
       </div>

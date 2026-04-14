@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { COLORS } from '../../constants/tactical'
+import { c2 } from '../../theme/c2CssVars'
 import {
   useUIStore,
   selectConnectionState,
@@ -10,6 +10,7 @@ import {
   selectLayersDebugShowLabels,
 } from '../../store/uiStore'
 import { LayerTierChip } from '../debug/LayerTierChip'
+import { PerfHintStrip } from './PerfHintStrip'
 import { FlirCanvas } from '../video/FlirCanvas'
 import { TacticalMap } from '../map/TacticalMap'
 import { SummaryStrip } from '../hud/SummaryStrip'
@@ -26,6 +27,7 @@ import type { DeploymentTopology, DroneInfo } from '../../types/telemetry'
  * Layout:
  * ┌─────────────────────────────────────────────┐
  * │ TOP BAR (32px)                               │
+ * │ PERF HINT (18px)                             │
  * ├──────────────────────┬──────────────────────┤
  * │ VIDEO PANEL (55%)    │ TACTICAL MAP (45%)   │
  * │                      │                      │
@@ -62,23 +64,24 @@ export function AppLayout() {
       width: '100vw',
       height: '100vh',
       display: 'grid',
-      gridTemplateRows: '32px 1fr auto 80px',
+      gridTemplateRows: '32px 18px 1fr auto 80px',
       gridTemplateColumns: '1fr',
-      background: COLORS.bgPrimary,
+      background: c2('bgPrimary'),
       overflow: 'hidden',
     }}>
       <TopBar topology={topology ?? null} showTierChips={showTierChips} />
+      <PerfHintStrip />
 
       <div style={{
         display: 'grid',
         gridTemplateColumns: '55fr 45fr',
-        borderBottom: `1px solid ${COLORS.border}`,
+        borderBottom: `1px solid ${c2('border')}`,
         overflow: 'hidden',
       }}>
         {/* Video panel: FLIR canvas */}
         <div style={{
           position: 'relative',
-          borderRight: `1px solid ${COLORS.border}`,
+          borderRight: `1px solid ${c2('border')}`,
           overflow: 'hidden',
         }}
         className="scan-lines"
@@ -129,9 +132,9 @@ function TopBar({
     return () => clearInterval(interval)
   }, [])
 
-  const connColor = connectionState === 'connected' ? COLORS.safe
-    : connectionState === 'reconnecting' ? COLORS.alertWarning
-    : COLORS.alertCritical
+  const connColor = connectionState === 'connected' ? c2('safe')
+    : connectionState === 'reconnecting' ? c2('alertWarning')
+    : c2('alertCritical')
 
   const connText = connectionState === 'connected' ? 'CONNECTED'
     : connectionState === 'reconnecting' ? `RECONNECTING (${reconnectAttempt})`
@@ -143,15 +146,15 @@ function TopBar({
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '0 12px 0 16px',
-      borderBottom: `1px solid ${COLORS.border}`,
-      background: COLORS.surfacePrimary,
+      borderBottom: `1px solid ${c2('border')}`,
+      background: c2('surfacePrimary'),
       fontSize: 12,
       gap: 12,
       minWidth: 0,
     }}>
       {/* Left: title + layers (always visible, not buried in status cluster) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <span className="mono" style={{ color: COLORS.textPrimary, fontWeight: 700, letterSpacing: '0.1em' }}>
+        <span className="mono" style={{ color: c2('textPrimary'), fontWeight: 700, letterSpacing: '0.1em' }}>
           DRONE C2 // DEMO
         </span>
         <button
@@ -166,10 +169,10 @@ function TopBar({
             letterSpacing: '0.12em',
             cursor: 'grab',
             flexShrink: 0,
-            background: layersDebugVisible ? COLORS.debugHighlightBg : COLORS.debugHighlightBgPanel,
-            color: COLORS.debugHighlightText,
-            border: `1px solid ${COLORS.debugHighlightBorder}`,
-            boxShadow: layersDebugVisible ? `0 0 0 1px ${COLORS.debugHighlightBorder}` : 'none',
+            background: layersDebugVisible ? c2('debugHighlightBg') : c2('debugHighlightBgPanel'),
+            color: c2('debugHighlightText'),
+            border: `1px solid ${c2('debugHighlightBorder')}`,
+            boxShadow: layersDebugVisible ? `0 0 0 1px ${c2('debugHighlightBorder')}` : 'none',
           }}
         >
           DATA LAYERS
@@ -177,7 +180,7 @@ function TopBar({
       </div>
 
       {/* Center: mission elapsed time */}
-      <span className="mono" style={{ color: COLORS.textSecondary, flexShrink: 0 }}>
+      <span className="mono" style={{ color: c2('textSecondary'), flexShrink: 0 }}>
         T+ {elapsed}
       </span>
 
@@ -185,7 +188,7 @@ function TopBar({
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, minWidth: 0 }}>
         {showTierChips ? <LayerTierChip text="C" inline /> : null}
         {topology && (
-          <span className="mono" style={{ color: COLORS.textMuted, fontSize: 10 }}>
+          <span className="mono" style={{ color: c2('textMuted'), fontSize: 10 }}>
             {topology.mode.toUpperCase()} / {topology.expectedLatencyMs}ms
           </span>
         )}
@@ -200,10 +203,10 @@ function TopBar({
             {connText}
           </span>
         </span>
-        <span className="mono" style={{ color: COLORS.textMuted, fontSize: 10 }}>
+        <span className="mono" style={{ color: c2('textMuted'), fontSize: 10 }}>
           {mps > 0 ? `${mps} msg/s` : '---'}
         </span>
-        <span className="mono" style={{ color: COLORS.textMuted, fontSize: 10 }}>
+        <span className="mono" style={{ color: c2('textMuted'), fontSize: 10 }}>
           5 UAS
         </span>
       </div>

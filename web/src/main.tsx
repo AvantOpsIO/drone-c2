@@ -2,8 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
+import { applyC2CssVariables } from './theme/c2CssVars'
 import App from './App'
 import { createLogger } from './utils/logger'
+
+applyC2CssVariables()
 
 const log = createLogger('global')
 
