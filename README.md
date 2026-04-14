@@ -7,7 +7,7 @@ Personal experiment: keep a React UI responsive when the screen and data path wa
 - **Clear hot path:** WebSocket in a **worker**, numeric **SharedArrayBuffer**, **`requestAnimationFrame`** for canvases, **Zustand** for slower UI with **selective** subscriptions. That is a direct answer to keeping React off the **10–50 Hz** presentation path.
 - **Tier A / B / C:** Presentation (SAB + rAF) vs throttled app state vs reference HTTP. Real split, not labels for show.
 - **Go + embedded SPA:** One binary can ship the UI; dev mode still uses Vite HMR.
-- **DATA LAYERS:** Draggable tier map for demos (defense / GCS style reviews care that you can explain the pipe).
+- **DATA LAYERS:** Draggable tier map for demos; in defense- and GCS-style technical reviews, stakeholders often expect a concise explanation of the data path—this panel supports that walkthrough.
 
 See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for problem statement, **why worker + SAB**, **COOP/COEP**, and a short “real system” sketch (binary telemetry, WebRTC video, dronekit-runtime).
 
