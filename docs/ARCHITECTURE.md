@@ -9,18 +9,22 @@ Browser UIs that show live tracks and sensor views need **high frequency present
 ```mermaid
 flowchart LR
   Go[Go server]
+  Hub[Hub Run loop]
   WS{{WebSocket}}
   HTTP{{HTTP}}
-  Go --> WS
+  Go --> Hub
+  Hub -->|JSON + syntheticEOContacts| WS
   Go --> HTTP
   WS -->|JSON frames| Worker[Telemetry worker]
-  Worker -->|numeric fields| SAB[(SharedArrayBuffer)]
+  Worker -->|pose + EO slots into SAB| SAB[(SharedArrayBuffer)]
   Worker -->|postMessage debounced + urgent| Zus[Zustand]
   SAB -->|read on rAF| Canv[FLIR + map canvases]
   Zus -->|selective subs| ReactB[React Tier B UI]
   HTTP --> RQ[React Query]
   RQ -->|long stale| ReactC[React Tier C UI]
 ```
+
+The **hub** attaches **`syntheticEOContacts`** to each drone’s JSON message: normalized FLIR positions, visibility, **ΔMSL** (target − own), and **slant range**, from a snapshot of latest positions—so **EO geometry stays in the synthetic path**, not in React. The worker copies core pose plus fixed **EO slots** into the SAB (per-drone stride includes that block); the FLIR canvas **only** formats and draws (plus presentation smoothing and **paint order by slant range**).
 
 ### Main thread vs worker (telemetry)
 
@@ -44,7 +48,7 @@ sequenceDiagram
 ## Hot path (Tier A)
 
 1. **WebSocket** receives JSON telemetry in a **dedicated worker** so the main thread does not parse or dispatch at wire rate.
-2. The worker writes **numeric fields** into a **SharedArrayBuffer** (SAB).
+2. The worker writes **numeric fields** into a **SharedArrayBuffer** (SAB): core pose per drone plus **synthetic EO contact slots** (norm position, ΔMSL, slant range) copied from the message—no trigonometry in the worker.
 3. **FLIR** and **map track heads** read the SAB inside **`requestAnimationFrame`**, so draw cadence follows the display, not React.
 
 ## Slower UI (Tier B)

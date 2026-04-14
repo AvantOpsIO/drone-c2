@@ -40,7 +40,7 @@ flowchart TB
 
 **Tier summary**
 
-- **Tier A** Hot numbers and positions land in a SharedArrayBuffer from the worker. Canvases read that on `requestAnimationFrame` so React is not in the loop for every tick.
+- **Tier A** Hot numbers and positions land in a SharedArrayBuffer from the worker. The Go hub adds **synthetic FLIR contacts** (screen-normalized position, ΔMSL, slant range) on each JSON message; the worker copies them into the SAB. Canvases read the SAB on `requestAnimationFrame` so React is not in the loop for every tick.
 - **Tier B** Full messages and strings get throttled into Zustand for cards, strips, and anything that is fine at a slower cadence, with urgent pushes when something important changes.
 - **Tier C** Reference stuff loads over HTTP with React Query so it is not fighting the live path.
 
