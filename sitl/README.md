@@ -2,6 +2,20 @@
 
 Headless **Gazebo Classic 11** + **PX4 v1.14.3** SITL in one container per drone. MAVLink GCS UDP listens on **14550** inside the container (ROMFS overlay). A synthetic **H.264 RTP** stream is published to **multicast** `239.255.42.<DRONE_INDEX>:5600` so multiple drones do not collide on one collector IP.
 
+### Topology (Docker)
+
+```mermaid
+flowchart TB
+  subgraph net["drones_net Docker network"]
+    D1["drone_1 container PX4 + Gazebo optional"]
+    D2["drone_N ..."]
+    CL["c2-client optional test harness"]
+  end
+  D1 -->|MAVLink UDP 14550| CL
+  D1 -->|RTP H.264 multicast 239.255.42.1:5600| CL
+  D2 -->|per index unique MAV_SYS_ID + multicast IP| CL
+```
+
 ## Requirements
 
 - Linux host (x86_64) with Docker and Docker Compose v2.
