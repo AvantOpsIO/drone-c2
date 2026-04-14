@@ -1,0 +1,6 @@
+web/node_modules
+web/dist
+cmd/server/static
+bin
+.git
+**/.DS_Store

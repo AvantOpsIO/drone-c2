@@ -1,0 +1,94 @@
+/*
+ * WHY self-hosted font: This demo targets DoD environments that may be
+ * airgapped. Loading from Google Fonts would fail. We bundle the WOFF2
+ * files directly so the entire app runs from a single binary with zero
+ * external network requests.
+ *
+ * Using system monospace as fallback if font files aren't present during
+ * early development. The actual WOFF2 files are fetched via npm postinstall
+ * or manually placed in src/assets/fonts/.
+ */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1f1a;
+  color: #e0ece0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Monospace class for telemetry readouts — fixed width prevents layout shift
+   when numeric values change every 100ms. */
+.mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaflet — gutter matches CyclOSM while tiles load; zoom chrome readable on light tiles. */
+.leaflet-container {
+  background: #dcdcdc !important;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background-color: #f4f4f4;
+  color: #1a1a1a;
+  border-color: #b0b0b0;
+}
+
+.leaflet-bar a:hover {
+  background-color: #e8e8e8;
+}
+
+.leaflet-touch .leaflet-bar a {
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.88);
+  color: #333;
+  font-size: 10px;
+  line-height: 1.3;
+  max-width: min(420px, 85vw);
+  white-space: normal;
+}
+
+/* Subtle scan line overlay for video panels. Applied via a pseudo-element
+   so it doesn't interfere with canvas mouse events. */
+.scan-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 10;
+}

@@ -1,0 +1,60 @@
+# PX4 SITL fleet — no host port publishes; traffic stays on Docker networks.
+# Recommended multi-drone: scripts/up-fleet.sh (unique DRONE_INDEX + names drone_1…).
+# docker compose up --scale drone=N works for a quick smoke test but every replica
+# shares the same MAV_SYS_ID unless you inject per-container env another way.
+
+networks:
+  drones:
+    name: drones_net
+    driver: bridge
+
+services:
+  # ARM64-friendly harness: same ports/multicast as real SITL (MAVLink 14550 + RTP multicast).
+  mock-drone:
+    build:
+      context: ./sitl/mock-drone
+      dockerfile: Dockerfile
+    networks:
+      - drones
+    environment:
+      DRONE_INDEX: ${DRONE_INDEX:-1}
+      ENABLE_VIDEO: ${ENABLE_VIDEO:-1}
+
+  drone:
+    build:
+      context: .
+      dockerfile: sitl/Dockerfile
+    networks:
+      - drones
+    shm_size: "512mb"
+    environment:
+      # Optional: set DRONE_INDEX when using docker compose run --name drone_1 -e DRONE_INDEX=1
+      DRONE_INDEX: ${DRONE_INDEX:-}
+      ENABLE_VIDEO: ${ENABLE_VIDEO:-1}
+      GAZEBO_MODEL: ${GAZEBO_MODEL:-iris}
+      GAZEBO_WORLD: ${GAZEBO_WORLD:-empty}
+
+  c2-client:
+    build:
+      context: ./sitl/c2-client
+      dockerfile: Dockerfile
+    networks:
+      - drones
+    environment:
+      DRONE_HOSTS: ${DRONE_HOSTS:-drone_1,drone_2,drone_3}
+      MAVLINK_PORT: ${MAVLINK_PORT:-14550}
+      VIDEO_PORT: ${VIDEO_PORT:-5600}
+      RUN_VIDEO_DEMO: ${RUN_VIDEO_DEMO:-0}
+      C2_EXIT_AFTER_CHECK: ${C2_EXIT_AFTER_CHECK:-0}
+
+  sitl-integration-test:
+    build:
+      context: ./sitl/integration-test
+      dockerfile: Dockerfile
+    networks:
+      - drones
+    environment:
+      DRONE_HOST: ${DRONE_HOST:-drone_1}
+      DRONE_INDEX: ${DRONE_INDEX:-1}
+      MAVLINK_PORT: ${MAVLINK_PORT:-14550}
+      VIDEO_PORT: ${VIDEO_PORT:-5600}
