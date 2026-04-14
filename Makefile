@@ -1,4 +1,4 @@
-.PHONY: help dev build clean build-field run start serve stop restart
+.PHONY: help dev build clean build-field run start serve stop restart test
 
 # Default HTTP listen port (passed to the Go binary via PORT).
 PORT ?= 8080
@@ -15,6 +15,7 @@ help:
 	@echo "  make dev          Go server + Vite (hot reload frontend)"
 	@echo "  make build-field  stripped single binary for airgapped deploy"
 	@echo "  make clean        remove cmd/server/static/* and bin/"
+	@echo "  make test         go test ./... and npm test in web/"
 	@echo ""
 	@echo "Examples:  PORT=3000 make run    make stop && make serve"
 
@@ -43,6 +44,10 @@ dev:
 	@echo "Go server on :$(PORT) (background) — Vite on http://localhost:5173"
 	PORT=$(PORT) go run ./cmd/server &
 	cd web && npm run dev
+
+test:
+	go test ./...
+	cd web && npm test
 
 clean:
 	rm -rf cmd/server/static/* bin/
