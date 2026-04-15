@@ -9,7 +9,7 @@ Personal experiment: keep a React UI responsive when the screen and data path wa
 - **Go + embedded SPA:** One binary can ship the UI; dev mode still uses Vite HMR.
 - **DATA LAYERS:** Draggable tier map for demos—walk tier A/B/C from ingest to UI in the running app when a demo or Q&A needs the path visible (defense/GCS-style settings are one example).
 
-See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for problem statement, **why worker + SAB**, **COOP/COEP**, and a short “real system” sketch (binary telemetry, WebRTC video, dronekit-runtime). That doc includes **Mermaid** diagrams for the data path, worker sequence, headers, and dev vs prod.
+See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for problem statement, **why worker + SAB**, **COOP/COEP**, and a short “real system” sketch (binary telemetry, WebRTC video, dronekit-runtime). That doc includes diagrams for the data path, worker sequence, headers, and dev vs prod.
 
 I went with a Go server that embeds the production Vite build, plus a dev mode where Vite runs next to Go for hot reload. Live telemetry uses a WebSocket into a worker, not the main React thread.
 
